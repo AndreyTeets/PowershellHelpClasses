@@ -10,9 +10,15 @@ class RemoteHostInteractor {
 
     [ValidateNotNull()][Logger]$Logger
     [ValidateNotNullOrEmpty()][string]$RemoteHelperFunctionsFileContent
-    [ValidateNotNull()][System.Collections.Generic.Dictionary[string, System.Management.Automation.Runspaces.PSSession]] $HostsSessions
+    [ValidateNotNull()][System.Collections.Generic.Dictionary[string, System.Management.Automation.Runspaces.PSSession]]$HostsSessions
 
+    RemoteHostInteractor([PSCustomObject]$config) {
+        $this.Init($config, (New-Object Logger([Verbosity]::Trace)))
+    }
     RemoteHostInteractor([PSCustomObject]$config, [Logger]$logger) {
+        $this.Init($config, $logger)
+    }
+    hidden [void]Init([PSCustomObject]$config, [Logger]$logger) {
         $this.Credential = $config.Credential
         $this.UseSSL = $config.UseSSL
         $this.IgnoreSSLCert = $config.IgnoreSSLCert
@@ -24,47 +30,47 @@ class RemoteHostInteractor {
 
     [void]ExecuteRemotely([ScriptBlock]$scriptBlock, [object[]]$params, [string[]]$hostNamesList) {
         if ([RemoteHostInteractor]::IsLocalHost($hostNamesList)) {
-            $this.Logger.Debug("Executing script block locally params=$([Logger]::DisplayArray($params))")
-            $this.Logger.Trace("============================================================={")
+            $this.Logger.Trace("Executing script block locally")
             $output = & $scriptBlock @params
-            $this.Logger.Trace($output)
+            $this.Logger.Trace("Executed script block output: '$output'")
         } else {
-            $this.Logger.Debug("Executing script block remotely on hosts $([Logger]::DisplayArray($hostNamesList)), params=$([Logger]::DisplayArray($params))")
+            $this.Logger.Trace("Executing script block remotely on hosts $([Logger]::DisplayArray($hostNamesList))")
             $sessions = $this.GetOrCreateSessions($hostNamesList)
-            $this.Logger.Trace("============================================================={")
             $output = Invoke-Command -Session $sessions -ScriptBlock $scriptBlock -ArgumentList $params
-            $this.Logger.Trace($output)
+            $this.Logger.Trace("Executed script block output: '$output'")
         }
-        $this.Logger.Trace("}=============================================================")
     }
 
     [void]CopyToRemote([string]$localPath, [string]$toRemotePath, [string[]]$hostNamesList) {
         if ([RemoteHostInteractor]::IsLocalHost($hostNamesList)) {
-            $this.Logger.Debug("Copying locally '$localPath' to '$toRemotePath'")
-            Copy-Item -Path "$localPath" -Destination "$toRemotePath" -Force -Recurse
+            $this.Logger.Trace("Copying locally '$localPath' to '$toRemotePath'")
+            Copy-Item -Path $localPath -Destination $toRemotePath -Force -Recurse
         } else {
-            $this.Logger.Debug("Copying remotely '$localPath' to '$toRemotePath' on hosts $([Logger]::DisplayArray($hostNamesList))")
-            $sessions = $this.GetOrCreateSessions($hostNamesList)
-            Copy-Item -ToSession $sessions -Path "$localPath" -Destination "$toRemotePath" -Force -Recurse
+            $this.Logger.Trace("Copying remotely '$localPath' to '$toRemotePath' on hosts $([Logger]::DisplayArray($hostNamesList))")
+            $sessionsList = $this.GetOrCreateSessions($hostNamesList)
+            foreach ($session in $sessionsList) {
+                $this.Logger.Trace("Copying to host '$($session.ComputerName)'")
+                Copy-Item -ToSession $session -Path $localPath -Destination $toRemotePath -Force -Recurse
+            }
         }
     }
 
     [System.Management.Automation.Runspaces.PSSession[]]GetOrCreateSessions([string[]]$hostNamesList) {
-        $this.Logger.Debug("Getting or creating WinRM sessions to $([Logger]::DisplayArray($hostNamesList))")
-        $sessions = @()
+        $sessionsList = @()
         foreach ($hostName in $hostNamesList) {
             if ($this.HostsSessions.ContainsKey($hostName)) {
-                $this.Logger.Debug("Using existing WinRM session to '$hostName'")
-                $sessions += $this.HostsSessions[$hostName]
+                $sessionsList += $this.HostsSessions[$hostName]
             } else {
-                $this.Logger.Debug("Creating WinRM session to '$hostName'")
-                $sessions += $this.CreateSession($hostName)
+                $session = $this.CreateSession($hostName)
+                $this.HostsSessions.Add($hostName, $session)
+                $sessionsList += $session
             }
         }
-        return $sessions
+        return $sessionsList
     }
 
     [System.Management.Automation.Runspaces.PSSession]CreateSession([string]$hostName) {
+        $this.Logger.Trace("Creating WinRM session to '$hostName'")
         $params = @{
             ComputerName = $hostName
         }
@@ -76,8 +82,8 @@ class RemoteHostInteractor {
             $this.Logger.Trace("Using SSL")
             $params.UseSSL = $true
             if ($this.IgnoreSSLCert) {
-                $this.Logger.Trace("Ignoring certificate checks")
-                $sessionOption = New-PSSessionOption -SkipCACheck -SkipCNCheck
+                $this.Logger.Trace("Ignoring SSL certificate")
+                $sessionOption = New-PSSessionOption -SkipCACheck -SkipCNCheck -SkipRevocationCheck
                 $params.SessionOption = $sessionOption
             }
         }
@@ -85,12 +91,10 @@ class RemoteHostInteractor {
 
         $this.Logger.Trace("Loading helper functions to created session")
         Invoke-Command -Session $session -ScriptBlock ([ScriptBlock]::Create($this.RemoteHelperFunctionsFileContent))
-        $this.HostsSessions.Add($hostName, $session)
         return $session
     }
 
     [void]CloseConnections() {
-        $this.Logger.Debug("Removing existing WinRM sessions")
         $this.HostsSessions.Values | Remove-PSSession
         $this.HostsSessions.Clear()
     }

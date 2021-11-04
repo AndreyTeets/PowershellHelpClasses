@@ -1,16 +1,14 @@
-using module "..\Classes\Logger.psm1"
 using module "..\Classes\RemoteHostInteractor.psm1"
 
-$logger = [Logger]::new('Trace')
 $config = [PSCustomObject]@{
     Credential = $null
     UseSSL = $false
     IgnoreSSLCert = $false
 }
-$impersonator = [RemoteHostInteractor]::new($config, $logger)
+$remoteHostInteractor = [RemoteHostInteractor]::new($config)
 
 try {
-    $impersonator.ExecuteRemotely({
+    $remoteHostInteractor.ExecuteRemotely({
             param(
                 [string]$SomeArg1,
                 [string]$SomeArg2
@@ -24,5 +22,5 @@ try {
         @("localhost")
     )
 } finally {
-    $impersonator.CloseConnections()
+    $remoteHostInteractor.CloseConnections()
 }

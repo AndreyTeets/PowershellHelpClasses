@@ -1,10 +1,8 @@
-using module "..\Classes\Logger.psm1"
 using module "..\Classes\ProcessRunner.psm1"
 
 Describe "ProcessRunner" {
     It "Provides correct output when process runs without error" {
-        $logger = [Logger]::new('Trace')
-        $processRunner = [ProcessRunner]::new($logger)
+        $processRunner = [ProcessRunner]::new()
 
         $processPath = "cmd.exe"
         $arguments = @("/c", "echo some output")
@@ -13,8 +11,8 @@ Describe "ProcessRunner" {
     }
 
     It "Logs received output to error and throws when process exits with error" {
-        $logger = [Logger]::new('Error')
-        $processRunner = [ProcessRunner]::new($logger)
+        $processRunner = [ProcessRunner]::new()
+        $processRunner.Logger.Verbosity = "Error"
 
         $processPath = "cmd.exe"
         $arguments = @("/c", "echo some output before error & exit 1")
@@ -30,8 +28,8 @@ Describe "ProcessRunner" {
     }
 
     It "Logs received output to error and throws when process times out" {
-        $logger = [Logger]::new('Error')
-        $processRunner = [ProcessRunner]::new($logger)
+        $processRunner = [ProcessRunner]::new()
+        $processRunner.Logger.Verbosity = "Error"
 
         $processPath = "cmd.exe"
         $arguments = @("/c", "echo some output before timeout & sleep 5")

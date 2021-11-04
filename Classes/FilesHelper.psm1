@@ -6,7 +6,13 @@ Set-StrictMode -Version 3.0
 class FilesHelper {
     [ValidateNotNull()][Logger]$Logger
 
+    FilesHelper() {
+        $this.Init((New-Object Logger([Verbosity]::Trace)))
+    }
     FilesHelper([Logger]$logger) {
+        $this.Init($logger)
+    }
+    hidden [void]Init([Logger]$logger) {
         $this.Logger = $logger
     }
 
@@ -17,12 +23,18 @@ class FilesHelper {
         }
     }
 
-    [void]CreateDirIfNotExists([string]$path) {
-        if (-not (Test-Path -Path $path)) {
-            $this.Logger.Trace("Creating directory '$path'")
-            New-Item -ItemType Directory -Path $path -Force
+    [void]CreateDirIfNotExists([string]$dir) {
+        if (-not (Test-Path -Path $dir)) {
+            $this.Logger.Trace("Creating directory '$dir'")
+            New-Item -ItemType Directory -Path $dir -Force
         }
     }
+
+    [void]CreateParentDirIfNotExists([string]$path) {
+        $parentDir = Split-Path -Path $path -Parent
+        $this.CreateDirIfNotExists($parentDir)
+    }
+
     [void]DeleteIfExists([string]$path) {
         if (Test-Path -Path $path) {
             $this.Logger.Trace("Deleting '$path'")
@@ -40,7 +52,7 @@ class FilesHelper {
         }
     }
 
-    [void]CopyIfExistsToDir([string]$path, [string]$toDir) {
+    [void]CopyToDirIfExists([string]$path, [string]$toDir) {
         if (Test-Path -Path $path) {
             $this.Logger.Trace("Copying if exists '$path' to directory '$toDir'")
             $this.CreateDirIfNotExists($toDir)

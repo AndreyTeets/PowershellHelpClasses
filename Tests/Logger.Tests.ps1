@@ -2,7 +2,7 @@ using module "..\Classes\Logger.psm1"
 
 Describe "Logger" {
     It "Writes all levels when verbosity is Trace" {
-        $logger = [Logger]::new('Trace')
+        $logger = [Logger]::new("Trace")
         ($logger.Error("some error msg") *>&1) | Should -BeLikeExactly "* ERROR some error msg"
         ($logger.Warn("some warn msg") *>&1) | Should -BeLikeExactly "* WARN some warn msg"
         ($logger.Info("some info msg") *>&1) | Should -BeLikeExactly "* INFO some info msg"
@@ -11,7 +11,7 @@ Describe "Logger" {
     }
 
     It "Writes Error, Warn and Info when verbosity is Info" {
-        $logger = [Logger]::new('Info')
+        $logger = [Logger]::new("Info")
         ($logger.Error("some error msg") *>&1) | Should -BeLikeExactly "* ERROR some error msg"
         ($logger.Warn("some warn msg") *>&1) | Should -BeLikeExactly "* WARN some warn msg"
         ($logger.Info("some info msg") *>&1) | Should -BeLikeExactly "* INFO some info msg"
@@ -20,7 +20,7 @@ Describe "Logger" {
     }
 
     It "Does not write anything when verbosity is None" {
-        $logger = [Logger]::new('None')
+        $logger = [Logger]::new("None")
         ($logger.Error("some error msg") *>&1) | Should -Be $null
         ($logger.Warn("some warn msg") *>&1) | Should -Be $null
         ($logger.Info("some info msg") *>&1) | Should -Be $null
@@ -29,7 +29,7 @@ Describe "Logger" {
     }
 
     It "Correctly adds strings to hide and sanitizes output" {
-        $logger = [Logger]::new('Trace')
+        $logger = [Logger]::new("Trace")
         $logger.AddStringsToHideInLogs(@("Secret", "secretval"))
         $logger.AddStringsToHideInLogs("Secret")
         $logger.AddStringsToHideInLogs("SecretVal2")

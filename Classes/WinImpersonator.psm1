@@ -487,8 +487,8 @@ function StartAndWaitProcessWithLogon {
         [System.IO.Path]::GetDirectoryName($Binary),
         $TimeoutSeconds * 1000);
 }
-
 Export-ModuleMember #none
+
 class WinImpersonator {
     [ValidateNotNullOrEmpty()][string]$UserName
     [ValidateNotNullOrEmpty()][string]$Password
@@ -497,7 +497,13 @@ class WinImpersonator {
     [ValidateNotNullOrEmpty()][string]$Domain
     [ValidateNotNullOrEmpty()][string]$UserNameOnly
 
+    WinImpersonator([PSCustomObject]$config) {
+        $this.Init($config, (New-Object Logger([Verbosity]::Trace)))
+    }
     WinImpersonator([PSCustomObject]$config, [Logger]$logger) {
+        $this.Init($config, $logger)
+    }
+    hidden [void]Init([PSCustomObject]$config, [Logger]$logger) {
         $this.UserName = $config.UserName
         $this.Password = $config.Password
 

@@ -9,7 +9,8 @@ $configuration.TestResult.Enabled = $true
 $configuration.TestResult.OutputPath = "$PSScriptRoot\Tests\TestsOutput\testResults.xml"
 
 $configuration.CodeCoverage.Enabled = $true
-$configuration.CodeCoverage.CoveragePercentTarget = 10
+$configuration.CodeCoverage.Path = @("$PSScriptRoot\Classes")
+$configuration.CodeCoverage.CoveragePercentTarget = 50
 $configuration.CodeCoverage.OutputFormat = "CoverageGutters"
 $configuration.CodeCoverage.OutputPath = "$PSScriptRoot\Tests\TestsOutput\Coverage\coverage.xml"
 

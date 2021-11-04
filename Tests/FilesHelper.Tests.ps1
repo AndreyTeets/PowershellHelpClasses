@@ -1,12 +1,10 @@
-using module "..\Classes\Logger.psm1"
 using module "..\Classes\FilesHelper.psm1"
 [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseDeclaredVarsMoreThanAssignments", "")]
 param()
 
 Describe "FilesHelper" {
     BeforeAll {
-        $logger = [Logger]::new('Trace')
-        $filesHelper = [FilesHelper]::new($logger)
+        $filesHelper = [FilesHelper]::new()
     }
 
     Context "Ctx" {

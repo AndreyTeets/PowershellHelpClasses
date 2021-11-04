@@ -2,6 +2,11 @@ $ErrorActionPreference = "Stop"
 $ProgressPreference = "SilentlyContinue"
 Set-StrictMode -Version 3.0
 
+$SanitizeIgnore = @(
+    ""
+)
+Export-ModuleMember #none
+
 enum Verbosity {
     None = 0
     Error = 1
@@ -64,6 +69,7 @@ class Logger {
         $newStringsToHideInLogs = $this.StringsToHideInLogs + $stringsToHide
         $this.StringsToHideInLogs = $newStringsToHideInLogs |
             Select-Object -Unique |
+            Where-Object { $_ -notin $SanitizeIgnore } |
             Sort-Object -Property Length -Desc
     }
 

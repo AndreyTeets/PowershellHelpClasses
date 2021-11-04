@@ -1,12 +1,10 @@
-using module "..\Classes\Logger.psm1"
 using module "..\Classes\WinImpersonator.psm1"
 
-$logger = [Logger]::new('Trace')
 $config = [PSCustomObject]@{
     UserName = "SomeDomain\SomeUser"
     Password = "SomePassword"
 }
-$impersonator = [WinImpersonator]::new($config, $logger)
+$impersonator = [WinImpersonator]::new($config)
 
 $result = $impersonator.ExecuteScriptBlockAsUser({ Write-Host "123"; return "bla bla" })
 Write-Host "ExecuteScriptBlockAsUser result='$result'"
